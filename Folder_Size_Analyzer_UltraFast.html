@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>UltraFast Folder Size Analyzer</title>
+<style>
+  :root{
+    --bg:#0b0d10; --panel:#12161c; --panel2:#171c23; --line:#252c36;
+    --text:#f5f7fa; --muted:#98a3b3; --accent:#ff8a00; --accent2:#ffb347;
+    --good:#33d17a; --danger:#ff5c5c; --shadow:0 20px 60px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; background:
+      radial-gradient(circle at 85% 10%, rgba(255,138,0,.13), transparent 28%),
+      radial-gradient(circle at 10% 90%, rgba(255,179,71,.08), transparent 25%),
+      var(--bg);
+    color:var(--text); font-family:Tahoma,Segoe UI,Arial,sans-serif;
+  }
+  .wrap{max-width:1240px;margin:auto;padding:26px}
+  .hero{
+    background:linear-gradient(145deg,rgba(255,138,0,.10),rgba(18,22,28,.96) 40%);
+    border:1px solid var(--line); border-radius:24px; padding:24px; box-shadow:var(--shadow);
+  }
+  .top{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .brand{display:flex;gap:14px;align-items:center}
+  .logo{
+    width:54px;height:54px;border-radius:16px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#161616;
+    font-size:27px;font-weight:900;box-shadow:0 12px 30px rgba(255,138,0,.22)
+  }
+  h1{margin:0 0 5px;font-size:25px}
+  .sub{color:var(--muted);font-size:13px;line-height:1.8}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  button{
+    border:0;border-radius:12px;padding:12px 16px;font:700 13px Tahoma,Segoe UI,sans-serif;
+    cursor:pointer;transition:.16s transform,.16s opacity,.16s background;
+  }
+  button:hover:not(:disabled){transform:translateY(-1px)}
+  button:disabled{opacity:.42;cursor:not-allowed}
+  .primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#161616}
+  .secondary{background:#222933;color:#eef2f7;border:1px solid #303946}
+  .danger{background:#2b1d20;color:#ffb7b7;border:1px solid #573036}
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px}
+  .card{
+    background:rgba(18,22,28,.88);border:1px solid var(--line);border-radius:16px;padding:16px;min-height:95px
+  }
+  .k{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .v{font-size:22px;font-weight:800;direction:ltr;text-align:right}
+  .progressBox{margin-top:14px;background:#0e1217;border:1px solid var(--line);border-radius:16px;padding:14px}
+  .progressRow{display:flex;align-items:center;gap:12px}
+  .bar{height:9px;border-radius:999px;background:#222933;overflow:hidden;flex:1}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s}
+  .pulse{width:100%;animation:pulse 1.2s ease-in-out infinite alternate}
+  @keyframes pulse{from{opacity:.45}to{opacity:1}}
+  #status{font-size:12px;color:#d8dee8;min-width:210px}
+  .panel{
+    margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    overflow:hidden;box-shadow:var(--shadow)
+  }
+  .panelHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .panelTitle{font-weight:800}
+  .hint{font-size:11px;color:var(--muted)}
+  .tableWrap{overflow:auto;max-height:58vh}
+  table{width:100%;border-collapse:collapse;font-size:12px;direction:rtl}
+  th,td{padding:11px 12px;border-bottom:1px solid #20262f;text-align:right;white-space:nowrap}
+  th{position:sticky;top:0;background:#171c23;color:#b8c2d1;z-index:1}
+  td.path{max-width:520px;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
+  .size{font-weight:800;color:#ffd7a3;direction:ltr}
+  .empty{padding:54px 20px;text-align:center;color:var(--muted)}
+  .foot{color:#7f8997;font-size:11px;text-align:center;margin:15px 0 0;line-height:1.8}
+  .pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#242b34;color:#cbd3de}
+  input[type=file]{display:none}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}.wrap{padding:12px}.hero{padding:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="top">
+      <div class="brand">
+        <div class="logo">↯</div>
+        <div>
+          <h1>UltraFast Folder Size Analyzer</h1>
+          <div class="sub">اسکن سبکِ پوشه‌های بسیار بزرگ — بدون پیش‌نمایش فایل‌ها — مرتب‌سازی پوشه‌ها بر اساس حجم</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="selectBtn" class="primary">📁 انتخاب پوشه</button>
+        <button id="saveBtn" class="secondary" disabled>💾 ذخیره گزارش TXT</button>
+        <button id="cancelBtn" class="danger" disabled>✕ توقف اسکن</button>
+        <input id="fallbackPicker" type="file" webkitdirectory multiple />
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="k">فایل‌های بررسی‌شده</div><div class="v" id="filesStat">0</div></div>
+      <div class="card"><div class="k">پوشه‌های پیدا‌شده</div><div class="v" id="foldersStat">0</div></div>
+      <div class="card"><div class="k">حجم کل</div><div class="v" id="sizeStat">0 B</div></div>
+      <div class="card"><div class="k">سرعت</div><div class="v" id="speedStat">0 /s</div></div>
+      <div class="card"><div class="k">زمان سپری‌شده</div><div class="v" id="timeStat">00:00</div></div>
+    </div>
+
+    <div class="progressBox">
+      <div class="progressRow">
+        <div class="bar"><div id="progressFill" class="fill"></div></div>
+        <div id="status">آماده — یک پوشه انتخاب کن</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panelHead">
+      <div>
+        <div class="panelTitle">بزرگ‌ترین پوشه‌ها</div>
+        <div class="hint">برای حفظ سرعت، جدول فقط 1000 پوشه اول را نشان می‌دهد؛ گزارش TXT شامل همه پوشه‌هاست.</div>
+      </div>
+      <span class="pill" id="rootLabel">No folder selected</span>
+    </div>
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr><th>رتبه</th><th>نام پوشه</th><th>حجم</th><th>تعداد فایل</th><th>عمق</th><th>مسیر</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="emptyState">هنوز گزارشی ساخته نشده است.</div>
+    </div>
+  </section>
+  <div class="foot">تمام پردازش داخل مرورگر خودت انجام می‌شود و هیچ فایلی آپلود نمی‌شود.</div>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const selectBtn = $("selectBtn"), saveBtn = $("saveBtn"), cancelBtn = $("cancelBtn");
+const fallbackPicker = $("fallbackPicker"), tbody = $("tbody"), emptyState = $("emptyState");
+const filesStat = $("filesStat"), foldersStat = $("foldersStat"), sizeStat = $("sizeStat");
+const speedStat = $("speedStat"), timeStat = $("timeStat"), statusEl = $("status");
+const progressFill = $("progressFill"), rootLabel = $("rootLabel");
+
+let cancelled = false;
+let scanning = false;
+let startedAt = 0;
+let lastUi = 0;
+let totalFiles = 0, totalBytes = 0;
+let folderRows = [];
+let selectedRootName = "";
+let timer = null;
+
+function fmtBytes(n){
+  if (!Number.isFinite(n) || n <= 0) return "0 B";
+  const u=["B","KB","MB","GB","TB","PB"];
+  const i=Math.min(Math.floor(Math.log(n)/Math.log(1024)),u.length-1);
+  const v=n/Math.pow(1024,i);
+  return (v >= 100 || i===0 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2))+" "+u[i];
+}
+function fmtNum(n){ return Number(n||0).toLocaleString("en-US"); }
+function fmtTime(ms){
+  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  return h ? `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`
+           : `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+function depthOf(path){ return Math.max(0, path.split("/").length - 1); }
+
+function resetUI(name){
+  cancelled=false; scanning=true; startedAt=performance.now(); lastUi=0;
+  totalFiles=0; totalBytes=0; folderRows=[]; selectedRootName=name || "Selected Folder";
+  filesStat.textContent="0"; foldersStat.textContent="0"; sizeStat.textContent="0 B";
+  speedStat.textContent="0 /s"; timeStat.textContent="00:00";
+  statusEl.textContent="در حال اسکن...";
+  rootLabel.textContent=selectedRootName;
+  tbody.innerHTML=""; emptyState.style.display="none";
+  saveBtn.disabled=true; selectBtn.disabled=true; cancelBtn.disabled=false;
+  progressFill.classList.add("pulse");
+  progressFill.style.width="100%";
+  clearInterval(timer);
+  timer=setInterval(()=>updateUI(true),500);
+}
+function finishUI(message){
+  scanning=false; clearInterval(timer);
+  progressFill.classList.remove("pulse");
+  progressFill.style.width=cancelled ? "0%" : "100%";
+  selectBtn.disabled=false; cancelBtn.disabled=true;
+  saveBtn.disabled=folderRows.length===0;
+  statusEl.textContent=message;
+  updateUI(true);
+}
+function updateUI(force=false){
+  const now=performance.now();
+  if(!force && now-lastUi<250) return;
+  lastUi=now;
+  const elapsed=Math.max(1,(now-startedAt)/1000);
+  filesStat.textContent=fmtNum(totalFiles);
+  foldersStat.textContent=fmtNum(folderRows.length || currentFolderCount);
+  sizeStat.textContent=fmtBytes(totalBytes);
+  speedStat.textContent=fmtNum(Math.round(totalFiles/elapsed))+" /s";
+  timeStat.textContent=fmtTime(now-startedAt);
+}
+let currentFolderCount=0;
+
+function renderTable(){
+  tbody.innerHTML="";
+  const frag=document.createDocumentFragment();
+  folderRows.slice(0,1000).forEach((r,i)=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${fmtNum(i+1)}</td>
+      <td>${esc(r.name)}</td>
+      <td class="size">${esc(fmtBytes(r.totalSize))}</td>
+      <td>${fmtNum(r.totalFiles)}</td>
+      <td>${r.depth}</td>
+      <td class="path" title="${esc(r.path)}">${esc(r.path)}</td>`;
+    frag.appendChild(tr);
+  });
+  tbody.appendChild(frag);
+  emptyState.style.display=folderRows.length ? "none" : "block";
+}
+
+function makeReport(){
+  const elapsed=performance.now()-startedAt;
+  const lines=[];
+  lines.push("ULTRAFAST FOLDER SIZE REPORT");
+  lines.push("=".repeat(78));
+  lines.push(`Root folder: ${selectedRootName}`);
+  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push(`Total files: ${totalFiles}`);
+  lines.push(`Total folders: ${folderRows.length}`);
+  lines.push(`Total size: ${fmtBytes(totalBytes)} (${totalBytes} bytes)`);
+  lines.push(`Scan elapsed: ${fmtTime(elapsed)}`);
+  lines.push("");
+  lines.push("Folders sorted from largest to smallest");
+  lines.push("-".repeat(78));
+  lines.push(["Rank","Folder","Size","Bytes","Files","Depth","Path"].join("\t"));
+  folderRows.forEach((r,i)=>{
+    lines.push([i+1,r.name,fmtBytes(r.totalSize),r.totalSize,r.totalFiles,r.depth,r.path].join("\t"));
+  });
+  return lines.join("\r\n");
+}
+
+async function saveReport(){
+  if(!folderRows.length) return;
+  const text=makeReport();
+  const suggested=`Folder_Size_Report_${selectedRootName.replace(/[\\/:*?"<>|]+/g,"_")}.txt`;
+  try{
+    if("showSaveFilePicker" in window){
+      const handle=await window.showSaveFilePicker({
+        suggestedName:suggested,
+        types:[{description:"Text report",accept:{"text/plain":[".txt"]}}]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(new Blob(["\ufeff",text],{type:"text/plain;charset=utf-8"}));
+      await writable.close();
+      statusEl.textContent="گزارش TXT با موفقیت ذخیره شد.";
+    }else{
+      const blob=new Blob(["\ufeff",text],{type:"text/plain;charset=utf-8"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob); a.download=suggested; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+      statusEl.textContent="گزارش TXT ساخته شد.";
+    }
+  }catch(e){
+    if(e && e.name!=="AbortError") alert("خطا در ذخیره گزارش:\n"+e.message);
+  }
+}
+
+// Directory Handle path: scalable and does not load file contents.
+async function scanDirectoryHandle(rootHandle){
+  resetUI(rootHandle.name);
+  const dirs = new Map();
+  currentFolderCount=1;
+  dirs.set(rootHandle.name,{
+    name:rootHandle.name,path:rootHandle.name,parent:null,
+    directSize:0,directFiles:0,totalSize:0,totalFiles:0,depth:0
+  });
+
+  const queue=[];
+  let activeDirs=0, finished=false, rejected=false;
+  const DIR_WORKERS=24;
+
+  return new Promise((resolve,reject)=>{
+    function enqueue(task){ queue.push(task); pump(); }
+    async function scanOne(task){
+      const rec=dirs.get(task.path);
+      try{
+        for await (const [name,handle] of task.handle.entries()){
+          if(cancelled) break;
+          if(handle.kind==="directory"){
+            const p=task.path+"/"+name;
+            if(!dirs.has(p)){
+              dirs.set(p,{
+                name,path:p,parent:task.path,directSize:0,directFiles:0,
+                totalSize:0,totalFiles:0,depth:depthOf(p)
+              });
+              currentFolderCount=dirs.size;
+              enqueue({handle,path:p});
+            }
+          }else if(handle.kind==="file"){
+            try{
+              const f=await handle.getFile();
+              rec.directSize+=f.size;
+              rec.directFiles++;
+              totalFiles++; totalBytes+=f.size;
+              updateUI();
+            }catch(err){
+              // Permission or transient file errors are skipped without stopping the scan.
+            }
+          }
+        }
+      }catch(err){
+        if(!cancelled) throw err;
+      }
+    }
+    function pump(){
+      if(rejected || finished) return;
+      while(!cancelled && activeDirs<DIR_WORKERS && queue.length){
+        const task=queue.shift(); activeDirs++;
+        scanOne(task).then(()=>{
+          activeDirs--; pump();
+        }).catch(err=>{
+          rejected=true; reject(err);
+        });
+      }
+      if((cancelled || queue.length===0) && activeDirs===0){
+        finished=true;
+        try{
+          if(cancelled){ finishUI("اسکن متوقف شد."); resolve(); return; }
+          finalizeDirs(dirs);
+          resolve();
+        }catch(err){ reject(err); }
+      }
+    }
+    enqueue({handle:rootHandle,path:rootHandle.name});
+  });
+}
+
+function finalizeDirs(dirs){
+  const arr=[...dirs.values()];
+  arr.sort((a,b)=>b.depth-a.depth);
+  for(const r of arr){
+    r.totalSize+=r.directSize;
+    r.totalFiles+=r.directFiles;
+    if(r.parent){
+      const p=dirs.get(r.parent);
+      if(p){ p.totalSize+=r.totalSize; p.totalFiles+=r.totalFiles; }
+    }
+  }
+  folderRows=[...dirs.values()].sort((a,b)=>b.totalSize-a.totalSize || a.path.localeCompare(b.path));
+  currentFolderCount=folderRows.length;
+  renderTable();
+  finishUI(`تمام شد — ${fmtNum(totalFiles)} فایل در ${fmtNum(folderRows.length)} پوشه بررسی شد.`);
+}
+
+// Fallback for browsers without showDirectoryPicker.
+async function scanFallbackFiles(fileList){
+  const files=Array.from(fileList || []);
+  if(!files.length) return;
+  const first=(files[0].webkitRelativePath||files[0].name).split("/")[0] || "Selected Folder";
+  resetUI(first);
+  const dirs=new Map();
+
+  function ensure(path){
+    if(dirs.has(path)) return dirs.get(path);
+    const parts=path.split("/");
+    const parent=parts.length>1 ? parts.slice(0,-1).join("/") : null;
+    const r={name:parts.at(-1),path,parent,directSize:0,directFiles:0,totalSize:0,totalFiles:0,depth:depthOf(path)};
+    dirs.set(path,r); return r;
+  }
+  ensure(first);
+
+  const CHUNK=5000;
+  for(let i=0;i<files.length;i++){
+    if(cancelled) break;
+    const f=files[i];
+    const rel=f.webkitRelativePath || `${first}/${f.name}`;
+    const parts=rel.split("/");
+    const dirPath=parts.length>1 ? parts.slice(0,-1).join("/") : first;
+
+    const dparts=dirPath.split("/");
+    for(let n=1;n<=dparts.length;n++) ensure(dparts.slice(0,n).join("/"));
+    const rec=ensure(dirPath);
+    rec.directSize+=f.size; rec.directFiles++;
+    totalFiles++; totalBytes+=f.size;
+    currentFolderCount=dirs.size;
+    if(i%CHUNK===0){
+      updateUI(true);
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+  if(cancelled){ finishUI("اسکن متوقف شد."); return; }
+  finalizeDirs(dirs);
+}
+
+selectBtn.addEventListener("click",async()=>{
+  try{
+    if("showDirectoryPicker" in window){
+      const handle=await window.showDirectoryPicker({mode:"read"});
+      await scanDirectoryHandle(handle);
+    }else{
+      fallbackPicker.value="";
+      fallbackPicker.click();
+    }
+  }catch(e){
+    if(e && e.name!=="AbortError"){
+      // If the modern picker is blocked, use the broad browser fallback.
+      fallbackPicker.value="";
+      fallbackPicker.click();
+    }
+  }
+});
+fallbackPicker.addEventListener("change",()=>scanFallbackFiles(fallbackPicker.files));
+saveBtn.addEventListener("click",saveReport);
+cancelBtn.addEventListener("click",()=>{
+  cancelled=true;
+  statusEl.textContent="در حال توقف...";
+  cancelBtn.disabled=true;
+});
+</script>
+</body>
+</html>
