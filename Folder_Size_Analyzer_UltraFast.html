@@ -3,22 +3,23 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>UltraFast Folder Size Analyzer</title>
+<title>UltraFast Folder Size Analyzer 2.0</title>
 <style>
   :root{
     --bg:#0b0d10; --panel:#12161c; --panel2:#171c23; --line:#252c36;
     --text:#f5f7fa; --muted:#98a3b3; --accent:#ff8a00; --accent2:#ffb347;
-    --good:#33d17a; --danger:#ff5c5c; --shadow:0 20px 60px rgba(0,0,0,.35);
+    --good:#33d17a; --danger:#ff5c5c; --warn:#ffd166; --shadow:0 20px 60px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box}
   body{
-    margin:0; min-height:100vh; background:
+    margin:0; min-height:100vh;
+    background:
       radial-gradient(circle at 85% 10%, rgba(255,138,0,.13), transparent 28%),
       radial-gradient(circle at 10% 90%, rgba(255,179,71,.08), transparent 25%),
       var(--bg);
     color:var(--text); font-family:Tahoma,Segoe UI,Arial,sans-serif;
   }
-  .wrap{max-width:1240px;margin:auto;padding:26px}
+  .wrap{max-width:1380px;margin:auto;padding:26px}
   .hero{
     background:linear-gradient(145deg,rgba(255,138,0,.10),rgba(18,22,28,.96) 40%);
     border:1px solid var(--line); border-radius:24px; padding:24px; box-shadow:var(--shadow);
@@ -32,17 +33,23 @@
   }
   h1{margin:0 0 5px;font-size:25px}
   .sub{color:var(--muted);font-size:13px;line-height:1.8}
-  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button,select,input{
+    border-radius:12px;font:700 13px Tahoma,Segoe UI,sans-serif;
+  }
   button{
-    border:0;border-radius:12px;padding:12px 16px;font:700 13px Tahoma,Segoe UI,sans-serif;
-    cursor:pointer;transition:.16s transform,.16s opacity,.16s background;
+    border:0;padding:12px 16px;cursor:pointer;transition:.16s transform,.16s opacity,.16s background;
   }
   button:hover:not(:disabled){transform:translateY(-1px)}
   button:disabled{opacity:.42;cursor:not-allowed}
   .primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#161616}
   .secondary{background:#222933;color:#eef2f7;border:1px solid #303946}
   .danger{background:#2b1d20;color:#ffb7b7;border:1px solid #573036}
-  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:18px}
+  select,input[type=search]{
+    background:#10151b;color:#eef2f7;border:1px solid #303946;padding:10px 12px;outline:none;
+  }
+  input[type=search]{min-width:250px;font-weight:500}
+  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:18px}
   .card{
     background:rgba(18,22,28,.88);border:1px solid var(--line);border-radius:16px;padding:16px;min-height:95px
   }
@@ -54,26 +61,46 @@
   .fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s}
   .pulse{width:100%;animation:pulse 1.2s ease-in-out infinite alternate}
   @keyframes pulse{from{opacity:.45}to{opacity:1}}
-  #status{font-size:12px;color:#d8dee8;min-width:210px}
+  #status{font-size:12px;color:#d8dee8;min-width:280px;min-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .panel{
     margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:20px;
     overflow:hidden;box-shadow:var(--shadow)
   }
-  .panelHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .panelHead{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap
+  }
   .panelTitle{font-weight:800}
-  .hint{font-size:11px;color:var(--muted)}
+  .hint{font-size:11px;color:var(--muted);line-height:1.8}
+  .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .tableWrap{overflow:auto;max-height:58vh}
   table{width:100%;border-collapse:collapse;font-size:12px;direction:rtl}
   th,td{padding:11px 12px;border-bottom:1px solid #20262f;text-align:right;white-space:nowrap}
-  th{position:sticky;top:0;background:#171c23;color:#b8c2d1;z-index:1}
+  th{position:sticky;top:0;background:#171c23;color:#b8c2d1;z-index:1;user-select:none}
+  th.sortable{cursor:pointer}
+  th.sortable:hover{color:#fff}
   td.path{max-width:520px;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
   .size{font-weight:800;color:#ffd7a3;direction:ltr}
   .empty{padding:54px 20px;text-align:center;color:var(--muted)}
   .foot{color:#7f8997;font-size:11px;text-align:center;margin:15px 0 0;line-height:1.8}
   .pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#242b34;color:#cbd3de}
+  .good{color:var(--good)}
+  .warn{color:var(--warn)}
+  .typesGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:14px 16px}
+  .typeCard{background:#0f141a;border:1px solid #242c36;border-radius:14px;padding:12px}
+  .typeName{font-size:12px;color:#dce3ec;direction:ltr;text-align:left;overflow:hidden;text-overflow:ellipsis}
+  .typeSize{font-size:18px;font-weight:800;margin-top:7px;direction:ltr;text-align:left}
+  .typeMeta{font-size:11px;color:var(--muted);margin-top:5px;direction:ltr;text-align:left}
+  .copyBtn{padding:6px 9px;font-size:11px}
   input[type=file]{display:none}
-  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:560px){.grid{grid-template-columns:1fr}.wrap{padding:12px}.hero{padding:16px}}
+  @media(max-width:1100px){.grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:700px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .wrap{padding:12px}.hero{padding:16px}
+    input[type=search]{min-width:190px;width:100%}
+    #status{min-width:140px}
+  }
+  @media(max-width:460px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -83,13 +110,18 @@
       <div class="brand">
         <div class="logo">↯</div>
         <div>
-          <h1>UltraFast Folder Size Analyzer</h1>
-          <div class="sub">اسکن سبکِ پوشه‌های بسیار بزرگ — بدون پیش‌نمایش فایل‌ها — مرتب‌سازی پوشه‌ها بر اساس حجم</div>
+          <h1>UltraFast Folder Size Analyzer <span class="pill">v2.0</span></h1>
+          <div class="sub">اسکن سریع پوشه‌های بزرگ، تحلیل نوع فایل، فیلتر و مرتب‌سازی — بدون خواندن محتوای فایل‌ها</div>
         </div>
       </div>
       <div class="actions">
         <button id="selectBtn" class="primary">📁 انتخاب پوشه</button>
-        <button id="saveBtn" class="secondary" disabled>💾 ذخیره گزارش TXT</button>
+        <select id="exportFormat" title="فرمت گزارش">
+          <option value="txt">TXT report</option>
+          <option value="csv">CSV report</option>
+          <option value="json">JSON report</option>
+        </select>
+        <button id="saveBtn" class="secondary" disabled>💾 ذخیره گزارش</button>
         <button id="cancelBtn" class="danger" disabled>✕ توقف اسکن</button>
         <input id="fallbackPicker" type="file" webkitdirectory multiple />
       </div>
@@ -101,6 +133,7 @@
       <div class="card"><div class="k">حجم کل</div><div class="v" id="sizeStat">0 B</div></div>
       <div class="card"><div class="k">سرعت</div><div class="v" id="speedStat">0 /s</div></div>
       <div class="card"><div class="k">زمان سپری‌شده</div><div class="v" id="timeStat">00:00</div></div>
+      <div class="card"><div class="k">خطاهای دسترسی</div><div class="v" id="errorsStat">0</div></div>
     </div>
 
     <div class="progressBox">
@@ -115,73 +148,130 @@
     <div class="panelHead">
       <div>
         <div class="panelTitle">بزرگ‌ترین پوشه‌ها</div>
-        <div class="hint">برای حفظ سرعت، جدول فقط 1000 پوشه اول را نشان می‌دهد؛ گزارش TXT شامل همه پوشه‌هاست.</div>
+        <div class="hint">مرتب‌سازی ستون‌ها، جستجو و فیلتر حجم فقط روی نمایش اثر دارند؛ گزارش خروجی شامل کل نتایج است.</div>
       </div>
-      <span class="pill" id="rootLabel">No folder selected</span>
+      <div class="tools">
+        <input id="searchBox" type="search" placeholder="جستجو در نام یا مسیر..." />
+        <select id="minSizeFilter">
+          <option value="0">همه حجم‌ها</option>
+          <option value="1048576">حداقل 1 MB</option>
+          <option value="10485760">حداقل 10 MB</option>
+          <option value="104857600">حداقل 100 MB</option>
+          <option value="1073741824">حداقل 1 GB</option>
+          <option value="10737418240">حداقل 10 GB</option>
+        </select>
+        <select id="rowLimit">
+          <option value="100">100 ردیف</option>
+          <option value="500">500 ردیف</option>
+          <option value="1000" selected>1000 ردیف</option>
+          <option value="5000">5000 ردیف</option>
+        </select>
+        <span class="pill" id="rootLabel">No folder selected</span>
+      </div>
     </div>
     <div class="tableWrap">
       <table>
         <thead>
-          <tr><th>رتبه</th><th>نام پوشه</th><th>حجم</th><th>تعداد فایل</th><th>عمق</th><th>مسیر</th></tr>
+          <tr>
+            <th>رتبه</th>
+            <th class="sortable" data-key="name">نام پوشه ↕</th>
+            <th class="sortable" data-key="totalSize">حجم ↕</th>
+            <th class="sortable" data-key="totalFiles">تعداد فایل ↕</th>
+            <th class="sortable" data-key="depth">عمق ↕</th>
+            <th class="sortable" data-key="path">مسیر ↕</th>
+            <th>کپی</th>
+          </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
       <div class="empty" id="emptyState">هنوز گزارشی ساخته نشده است.</div>
     </div>
   </section>
-  <div class="foot">تمام پردازش داخل مرورگر خودت انجام می‌شود و هیچ فایلی آپلود نمی‌شود.</div>
+
+  <section class="panel">
+    <div class="panelHead">
+      <div>
+        <div class="panelTitle">بزرگ‌ترین نوع‌های فایل</div>
+        <div class="hint">بر اساس مجموع حجم فایل‌ها؛ فقط نام و اندازه فایل بررسی می‌شود و محتوای فایل خوانده نمی‌شود.</div>
+      </div>
+      <span class="pill" id="engineLabel">Scan engine: idle</span>
+    </div>
+    <div id="typesGrid" class="typesGrid">
+      <div class="empty" style="grid-column:1/-1;padding:30px 10px">پس از پایان اسکن، خلاصه نوع فایل‌ها اینجا نمایش داده می‌شود.</div>
+    </div>
+  </section>
+
+  <div class="foot">
+    تمام پردازش داخل مرورگر انجام می‌شود و هیچ فایلی آپلود نمی‌شود.
+    برای بهترین کارایی در پوشه‌های بسیار بزرگ، مرورگرهای Chromium-based توصیه می‌شوند.
+  </div>
 </div>
 
 <script>
 "use strict";
 
 const $ = id => document.getElementById(id);
-const selectBtn = $("selectBtn"), saveBtn = $("saveBtn"), cancelBtn = $("cancelBtn");
-const fallbackPicker = $("fallbackPicker"), tbody = $("tbody"), emptyState = $("emptyState");
-const filesStat = $("filesStat"), foldersStat = $("foldersStat"), sizeStat = $("sizeStat");
-const speedStat = $("speedStat"), timeStat = $("timeStat"), statusEl = $("status");
-const progressFill = $("progressFill"), rootLabel = $("rootLabel");
+const selectBtn=$("selectBtn"), saveBtn=$("saveBtn"), cancelBtn=$("cancelBtn");
+const fallbackPicker=$("fallbackPicker"), tbody=$("tbody"), emptyState=$("emptyState");
+const filesStat=$("filesStat"), foldersStat=$("foldersStat"), sizeStat=$("sizeStat");
+const speedStat=$("speedStat"), timeStat=$("timeStat"), errorsStat=$("errorsStat");
+const statusEl=$("status"), progressFill=$("progressFill"), rootLabel=$("rootLabel");
+const searchBox=$("searchBox"), minSizeFilter=$("minSizeFilter"), rowLimit=$("rowLimit");
+const exportFormat=$("exportFormat"), typesGrid=$("typesGrid"), engineLabel=$("engineLabel");
 
-let cancelled = false;
-let scanning = false;
-let startedAt = 0;
-let lastUi = 0;
-let totalFiles = 0, totalBytes = 0;
-let folderRows = [];
-let selectedRootName = "";
-let timer = null;
+let cancelled=false, scanning=false, startedAt=0, lastUi=0;
+let totalFiles=0, totalBytes=0, errorCount=0, currentFolderCount=0;
+let folderRows=[], selectedRootName="", timer=null;
+let fileTypes=new Map();
+let sortKey="totalSize", sortDir=-1;
+let scanEngine="idle";
+
+const hardware = Number(navigator.hardwareConcurrency || 8);
+const DIR_WORKERS = Math.min(24, Math.max(6, hardware * 2));
 
 function fmtBytes(n){
-  if (!Number.isFinite(n) || n <= 0) return "0 B";
+  if(!Number.isFinite(n) || n<=0) return "0 B";
   const u=["B","KB","MB","GB","TB","PB"];
   const i=Math.min(Math.floor(Math.log(n)/Math.log(1024)),u.length-1);
   const v=n/Math.pow(1024,i);
-  return (v >= 100 || i===0 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2))+" "+u[i];
+  return (v>=100 || i===0 ? v.toFixed(0) : v>=10 ? v.toFixed(1) : v.toFixed(2))+" "+u[i];
 }
-function fmtNum(n){ return Number(n||0).toLocaleString("en-US"); }
+function fmtNum(n){return Number(n||0).toLocaleString("en-US")}
 function fmtTime(ms){
-  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
   return h ? `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`
            : `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
 }
-function esc(s){
-  return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+function safeName(s){return String(s||"report").replace(/[\\/:*?"<>|]+/g,"_").slice(0,120)}
+function depthOf(path){return Math.max(0,path.split("/").length-1)}
+function extensionOf(name){
+  const base=String(name||"");
+  const i=base.lastIndexOf(".");
+  if(i<=0 || i===base.length-1) return "(no extension)";
+  return base.slice(i).toLowerCase();
 }
-function depthOf(path){ return Math.max(0, path.split("/").length - 1); }
-
-function resetUI(name){
+function addFileType(name,size){
+  const ext=extensionOf(name);
+  const rec=fileTypes.get(ext)||{ext,count:0,size:0};
+  rec.count++; rec.size+=Number(size||0);
+  fileTypes.set(ext,rec);
+}
+function resetUI(name,engine){
   cancelled=false; scanning=true; startedAt=performance.now(); lastUi=0;
-  totalFiles=0; totalBytes=0; folderRows=[]; selectedRootName=name || "Selected Folder";
+  totalFiles=0; totalBytes=0; errorCount=0; currentFolderCount=0;
+  folderRows=[]; fileTypes=new Map(); selectedRootName=name||"Selected Folder";
+  scanEngine=engine||"unknown";
   filesStat.textContent="0"; foldersStat.textContent="0"; sizeStat.textContent="0 B";
-  speedStat.textContent="0 /s"; timeStat.textContent="00:00";
+  speedStat.textContent="0 /s"; timeStat.textContent="00:00"; errorsStat.textContent="0";
   statusEl.textContent="در حال اسکن...";
   rootLabel.textContent=selectedRootName;
-  tbody.innerHTML=""; emptyState.style.display="none";
+  engineLabel.textContent=`Scan engine: ${scanEngine}`;
+  tbody.innerHTML=""; emptyState.style.display="block"; emptyState.textContent="در حال اسکن...";
+  typesGrid.innerHTML='<div class="empty" style="grid-column:1/-1;padding:30px 10px">در حال جمع‌آوری آمار نوع فایل...</div>';
   saveBtn.disabled=true; selectBtn.disabled=true; cancelBtn.disabled=false;
-  progressFill.classList.add("pulse");
-  progressFill.style.width="100%";
-  clearInterval(timer);
-  timer=setInterval(()=>updateUI(true),500);
+  searchBox.disabled=true; minSizeFilter.disabled=true; rowLimit.disabled=true;
+  progressFill.classList.add("pulse"); progressFill.style.width="100%";
+  clearInterval(timer); timer=setInterval(()=>updateUI(true),500);
 }
 function finishUI(message){
   scanning=false; clearInterval(timer);
@@ -189,8 +279,8 @@ function finishUI(message){
   progressFill.style.width=cancelled ? "0%" : "100%";
   selectBtn.disabled=false; cancelBtn.disabled=true;
   saveBtn.disabled=folderRows.length===0;
-  statusEl.textContent=message;
-  updateUI(true);
+  searchBox.disabled=false; minSizeFilter.disabled=false; rowLimit.disabled=false;
+  statusEl.textContent=message; updateUI(true);
 }
 function updateUI(force=false){
   const now=performance.now();
@@ -198,170 +288,289 @@ function updateUI(force=false){
   lastUi=now;
   const elapsed=Math.max(1,(now-startedAt)/1000);
   filesStat.textContent=fmtNum(totalFiles);
-  foldersStat.textContent=fmtNum(folderRows.length || currentFolderCount);
+  foldersStat.textContent=fmtNum(folderRows.length||currentFolderCount);
   sizeStat.textContent=fmtBytes(totalBytes);
   speedStat.textContent=fmtNum(Math.round(totalFiles/elapsed))+" /s";
   timeStat.textContent=fmtTime(now-startedAt);
+  errorsStat.textContent=fmtNum(errorCount);
 }
-let currentFolderCount=0;
 
+function getVisibleRows(){
+  const q=searchBox.value.trim().toLocaleLowerCase();
+  const min=Number(minSizeFilter.value||0);
+  const arr=folderRows.filter(r=>{
+    if(r.totalSize<min) return false;
+    if(!q) return true;
+    return r.name.toLocaleLowerCase().includes(q) || r.path.toLocaleLowerCase().includes(q);
+  });
+  arr.sort((a,b)=>{
+    const av=a[sortKey],bv=b[sortKey];
+    let c=0;
+    if(typeof av==="number" && typeof bv==="number") c=av-bv;
+    else c=String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:"base"});
+    return c*sortDir;
+  });
+  return arr;
+}
+
+function addCell(tr,text,className=""){
+  const td=document.createElement("td");
+  td.textContent=text;
+  if(className) td.className=className;
+  tr.appendChild(td);
+  return td;
+}
+async function copyText(text,btn){
+  try{
+    if(navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else{
+      const ta=document.createElement("textarea");
+      ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+    }
+    const old=btn.textContent; btn.textContent="✓"; setTimeout(()=>btn.textContent=old,900);
+  }catch(e){ alert("کپی مسیر انجام نشد."); }
+}
 function renderTable(){
   tbody.innerHTML="";
+  const rows=getVisibleRows();
+  const limit=Number(rowLimit.value||1000);
+  const shown=rows.slice(0,limit);
   const frag=document.createDocumentFragment();
-  folderRows.slice(0,1000).forEach((r,i)=>{
+
+  shown.forEach((r,i)=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${fmtNum(i+1)}</td>
-      <td>${esc(r.name)}</td>
-      <td class="size">${esc(fmtBytes(r.totalSize))}</td>
-      <td>${fmtNum(r.totalFiles)}</td>
-      <td>${r.depth}</td>
-      <td class="path" title="${esc(r.path)}">${esc(r.path)}</td>`;
+    addCell(tr,fmtNum(i+1));
+    addCell(tr,r.name);
+    addCell(tr,fmtBytes(r.totalSize),"size");
+    addCell(tr,fmtNum(r.totalFiles));
+    addCell(tr,String(r.depth));
+    const p=addCell(tr,r.path,"path"); p.title=r.path;
+    const td=document.createElement("td");
+    const b=document.createElement("button");
+    b.className="secondary copyBtn"; b.textContent="کپی مسیر";
+    b.addEventListener("click",()=>copyText(r.path,b));
+    td.appendChild(b); tr.appendChild(td);
     frag.appendChild(tr);
   });
   tbody.appendChild(frag);
-  emptyState.style.display=folderRows.length ? "none" : "block";
+  emptyState.style.display=shown.length ? "none" : "block";
+  if(!shown.length) emptyState.textContent=folderRows.length ? "نتیجه‌ای با این فیلتر پیدا نشد." : "هنوز گزارشی ساخته نشده است.";
+  statusEl.title=`نمایش ${shown.length} از ${rows.length} نتیجه فیلترشده؛ کل پوشه‌ها: ${folderRows.length}`;
 }
 
-function makeReport(){
-  const elapsed=performance.now()-startedAt;
-  const lines=[];
-  lines.push("ULTRAFAST FOLDER SIZE REPORT");
-  lines.push("=".repeat(78));
-  lines.push(`Root folder: ${selectedRootName}`);
-  lines.push(`Generated: ${new Date().toLocaleString()}`);
-  lines.push(`Total files: ${totalFiles}`);
-  lines.push(`Total folders: ${folderRows.length}`);
-  lines.push(`Total size: ${fmtBytes(totalBytes)} (${totalBytes} bytes)`);
-  lines.push(`Scan elapsed: ${fmtTime(elapsed)}`);
-  lines.push("");
-  lines.push("Folders sorted from largest to smallest");
-  lines.push("-".repeat(78));
-  lines.push(["Rank","Folder","Size","Bytes","Files","Depth","Path"].join("\t"));
-  folderRows.forEach((r,i)=>{
-    lines.push([i+1,r.name,fmtBytes(r.totalSize),r.totalSize,r.totalFiles,r.depth,r.path].join("\t"));
-  });
-  return lines.join("\r\n");
-}
-
-async function saveReport(){
-  if(!folderRows.length) return;
-  const text=makeReport();
-  const suggested=`Folder_Size_Report_${selectedRootName.replace(/[\\/:*?"<>|]+/g,"_")}.txt`;
-  try{
-    if("showSaveFilePicker" in window){
-      const handle=await window.showSaveFilePicker({
-        suggestedName:suggested,
-        types:[{description:"Text report",accept:{"text/plain":[".txt"]}}]
-      });
-      const writable=await handle.createWritable();
-      await writable.write(new Blob(["\ufeff",text],{type:"text/plain;charset=utf-8"}));
-      await writable.close();
-      statusEl.textContent="گزارش TXT با موفقیت ذخیره شد.";
-    }else{
-      const blob=new Blob(["\ufeff",text],{type:"text/plain;charset=utf-8"});
-      const a=document.createElement("a");
-      a.href=URL.createObjectURL(blob); a.download=suggested; a.click();
-      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-      statusEl.textContent="گزارش TXT ساخته شد.";
-    }
-  }catch(e){
-    if(e && e.name!=="AbortError") alert("خطا در ذخیره گزارش:\n"+e.message);
+function renderTypes(){
+  const arr=[...fileTypes.values()].sort((a,b)=>b.size-a.size || b.count-a.count).slice(0,18);
+  typesGrid.innerHTML="";
+  if(!arr.length){
+    typesGrid.innerHTML='<div class="empty" style="grid-column:1/-1;padding:30px 10px">نوع فایلی ثبت نشد.</div>';
+    return;
   }
-}
-
-// Directory Handle path: scalable and does not load file contents.
-async function scanDirectoryHandle(rootHandle){
-  resetUI(rootHandle.name);
-  const dirs = new Map();
-  currentFolderCount=1;
-  dirs.set(rootHandle.name,{
-    name:rootHandle.name,path:rootHandle.name,parent:null,
-    directSize:0,directFiles:0,totalSize:0,totalFiles:0,depth:0
-  });
-
-  const queue=[];
-  let activeDirs=0, finished=false, rejected=false;
-  const DIR_WORKERS=24;
-
-  return new Promise((resolve,reject)=>{
-    function enqueue(task){ queue.push(task); pump(); }
-    async function scanOne(task){
-      const rec=dirs.get(task.path);
-      try{
-        for await (const [name,handle] of task.handle.entries()){
-          if(cancelled) break;
-          if(handle.kind==="directory"){
-            const p=task.path+"/"+name;
-            if(!dirs.has(p)){
-              dirs.set(p,{
-                name,path:p,parent:task.path,directSize:0,directFiles:0,
-                totalSize:0,totalFiles:0,depth:depthOf(p)
-              });
-              currentFolderCount=dirs.size;
-              enqueue({handle,path:p});
-            }
-          }else if(handle.kind==="file"){
-            try{
-              const f=await handle.getFile();
-              rec.directSize+=f.size;
-              rec.directFiles++;
-              totalFiles++; totalBytes+=f.size;
-              updateUI();
-            }catch(err){
-              // Permission or transient file errors are skipped without stopping the scan.
-            }
-          }
-        }
-      }catch(err){
-        if(!cancelled) throw err;
-      }
-    }
-    function pump(){
-      if(rejected || finished) return;
-      while(!cancelled && activeDirs<DIR_WORKERS && queue.length){
-        const task=queue.shift(); activeDirs++;
-        scanOne(task).then(()=>{
-          activeDirs--; pump();
-        }).catch(err=>{
-          rejected=true; reject(err);
-        });
-      }
-      if((cancelled || queue.length===0) && activeDirs===0){
-        finished=true;
-        try{
-          if(cancelled){ finishUI("اسکن متوقف شد."); resolve(); return; }
-          finalizeDirs(dirs);
-          resolve();
-        }catch(err){ reject(err); }
-      }
-    }
-    enqueue({handle:rootHandle,path:rootHandle.name});
-  });
+  const frag=document.createDocumentFragment();
+  for(const r of arr){
+    const c=document.createElement("div"); c.className="typeCard";
+    const n=document.createElement("div"); n.className="typeName"; n.textContent=r.ext;
+    const s=document.createElement("div"); s.className="typeSize"; s.textContent=fmtBytes(r.size);
+    const m=document.createElement("div"); m.className="typeMeta"; m.textContent=`${fmtNum(r.count)} files`;
+    c.append(n,s,m); frag.appendChild(c);
+  }
+  typesGrid.appendChild(frag);
 }
 
 function finalizeDirs(dirs){
   const arr=[...dirs.values()];
   arr.sort((a,b)=>b.depth-a.depth);
   for(const r of arr){
-    r.totalSize+=r.directSize;
-    r.totalFiles+=r.directFiles;
+    r.totalSize+=r.directSize; r.totalFiles+=r.directFiles;
     if(r.parent){
       const p=dirs.get(r.parent);
-      if(p){ p.totalSize+=r.totalSize; p.totalFiles+=r.totalFiles; }
+      if(p){p.totalSize+=r.totalSize;p.totalFiles+=r.totalFiles}
     }
   }
-  folderRows=[...dirs.values()].sort((a,b)=>b.totalSize-a.totalSize || a.path.localeCompare(b.path));
+  folderRows=[...dirs.values()];
   currentFolderCount=folderRows.length;
-  renderTable();
-  finishUI(`تمام شد — ${fmtNum(totalFiles)} فایل در ${fmtNum(folderRows.length)} پوشه بررسی شد.`);
+  renderTable(); renderTypes();
+  finishUI(`تمام شد — ${fmtNum(totalFiles)} فایل در ${fmtNum(folderRows.length)} پوشه بررسی شد${errorCount?`؛ ${fmtNum(errorCount)} خطای دسترسی نادیده گرفته شد`:""}.`);
+}
+
+function formulaSafe(v){
+  const s=String(v??"");
+  return /^[=+\-@]/.test(s) ? "'"+s : s;
+}
+function csvCell(v){
+  const s=formulaSafe(v).replace(/"/g,'""');
+  return `"${s}"`;
+}
+function reportMetadata(){
+  const elapsed=performance.now()-startedAt;
+  return {
+    app:"UltraFast Folder Size Analyzer",
+    version:"2.0",
+    root:selectedRootName,
+    generated:new Date().toISOString(),
+    scan_engine:scanEngine,
+    directory_workers:scanEngine.includes("Directory Handle") ? DIR_WORKERS : 1,
+    total_files:totalFiles,
+    total_folders:folderRows.length,
+    total_bytes:totalBytes,
+    total_size_human:fmtBytes(totalBytes),
+    access_errors:errorCount,
+    elapsed_ms:Math.round(elapsed),
+    elapsed_human:fmtTime(elapsed)
+  };
+}
+function makeTxt(){
+  const m=reportMetadata(), lines=[];
+  lines.push("ULTRAFAST FOLDER SIZE REPORT v2.0");
+  lines.push("=".repeat(88));
+  lines.push(`Root folder: ${m.root}`);
+  lines.push(`Generated: ${new Date().toLocaleString()}`);
+  lines.push(`Scan engine: ${m.scan_engine}`);
+  lines.push(`Directory workers: ${m.directory_workers}`);
+  lines.push(`Total files: ${m.total_files}`);
+  lines.push(`Total folders: ${m.total_folders}`);
+  lines.push(`Total size: ${m.total_size_human} (${m.total_bytes} bytes)`);
+  lines.push(`Access errors: ${m.access_errors}`);
+  lines.push(`Scan elapsed: ${m.elapsed_human}`);
+  lines.push("");
+  lines.push("FILE TYPES (largest first)");
+  lines.push("-".repeat(88));
+  lines.push(["Extension","Files","Size","Bytes"].join("\t"));
+  [...fileTypes.values()].sort((a,b)=>b.size-a.size).forEach(r=>{
+    lines.push([r.ext,r.count,fmtBytes(r.size),r.size].join("\t"));
+  });
+  lines.push("");
+  lines.push("FOLDERS (largest first)");
+  lines.push("-".repeat(88));
+  lines.push(["Rank","Folder","Size","Bytes","Files","Depth","Path"].join("\t"));
+  [...folderRows].sort((a,b)=>b.totalSize-a.totalSize || a.path.localeCompare(b.path)).forEach((r,i)=>{
+    lines.push([i+1,r.name,fmtBytes(r.totalSize),r.totalSize,r.totalFiles,r.depth,r.path].join("\t"));
+  });
+  return "\ufeff"+lines.join("\r\n");
+}
+function makeCsv(){
+  const rows=[["Rank","Folder","Size","Bytes","Files","Depth","Path"]];
+  [...folderRows].sort((a,b)=>b.totalSize-a.totalSize || a.path.localeCompare(b.path)).forEach((r,i)=>{
+    rows.push([i+1,r.name,fmtBytes(r.totalSize),r.totalSize,r.totalFiles,r.depth,r.path]);
+  });
+  return "\ufeff"+rows.map(row=>row.map(csvCell).join(",")).join("\r\n");
+}
+function makeJson(){
+  const obj={
+    metadata:reportMetadata(),
+    file_types:[...fileTypes.values()].sort((a,b)=>b.size-a.size),
+    folders:[...folderRows].sort((a,b)=>b.totalSize-a.totalSize || a.path.localeCompare(b.path))
+  };
+  return JSON.stringify(obj,null,2);
+}
+async function saveBlob(name,mime,text){
+  try{
+    if("showSaveFilePicker" in window){
+      const ext="."+name.split(".").pop();
+      const handle=await window.showSaveFilePicker({
+        suggestedName:name,
+        types:[{description:"Report",accept:{[mime]:[ext]}}]
+      });
+      const writable=await handle.createWritable();
+      await writable.write(new Blob([text],{type:mime}));
+      await writable.close();
+    }else{
+      const blob=new Blob([text],{type:mime});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob); a.download=name; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    }
+    statusEl.textContent="گزارش با موفقیت ذخیره شد.";
+  }catch(e){
+    if(e && e.name!=="AbortError") alert("خطا در ذخیره گزارش:\n"+e.message);
+  }
+}
+async function saveReport(){
+  if(!folderRows.length) return;
+  const base=`Folder_Size_Report_${safeName(selectedRootName)}`;
+  const fmt=exportFormat.value;
+  if(fmt==="csv") return saveBlob(base+".csv","text/csv;charset=utf-8",makeCsv());
+  if(fmt==="json") return saveBlob(base+".json","application/json;charset=utf-8",makeJson());
+  return saveBlob(base+".txt","text/plain;charset=utf-8",makeTxt());
+}
+
+// Modern File System Access API path: scalable and does not load file contents.
+async function scanDirectoryHandle(rootHandle){
+  resetUI(rootHandle.name,`Directory Handle / ${DIR_WORKERS} workers`);
+  const dirs=new Map();
+  currentFolderCount=1;
+  dirs.set(rootHandle.name,{
+    name:rootHandle.name,path:rootHandle.name,parent:null,
+    directSize:0,directFiles:0,totalSize:0,totalFiles:0,depth:0
+  });
+
+  const queue=[], waiters=[];
+  let active=0, done=false;
+
+  function enqueue(task){
+    queue.push(task);
+    pump();
+  }
+  async function scanOne(task){
+    const rec=dirs.get(task.path);
+    try{
+      for await(const [name,handle] of task.handle.entries()){
+        if(cancelled) break;
+        if(handle.kind==="directory"){
+          const p=task.path+"/"+name;
+          if(!dirs.has(p)){
+            dirs.set(p,{name,path:p,parent:task.path,directSize:0,directFiles:0,totalSize:0,totalFiles:0,depth:depthOf(p)});
+            currentFolderCount=dirs.size;
+            enqueue({handle,path:p});
+          }
+        }else if(handle.kind==="file"){
+          try{
+            const f=await handle.getFile();
+            rec.directSize+=f.size; rec.directFiles++;
+            totalFiles++; totalBytes+=f.size; addFileType(name,f.size);
+            updateUI();
+          }catch(err){
+            errorCount++; updateUI();
+          }
+        }
+      }
+    }catch(err){
+      errorCount++; updateUI();
+    }
+  }
+  function maybeDone(){
+    if(done) return;
+    if((cancelled || queue.length===0) && active===0){
+      done=true;
+      for(const resolve of waiters) resolve();
+    }
+  }
+  function pump(){
+    if(done) return;
+    while(!cancelled && active<DIR_WORKERS && queue.length){
+      const task=queue.shift(); active++;
+      scanOne(task).finally(()=>{
+        active--; pump(); maybeDone();
+      });
+    }
+    maybeDone();
+  }
+
+  const finished=new Promise(resolve=>waiters.push(resolve));
+  enqueue({handle:rootHandle,path:rootHandle.name});
+  pump();
+  await finished;
+
+  if(cancelled){finishUI("اسکن متوقف شد.");return}
+  finalizeDirs(dirs);
 }
 
 // Fallback for browsers without showDirectoryPicker.
 async function scanFallbackFiles(fileList){
-  const files=Array.from(fileList || []);
+  const files=Array.from(fileList||[]);
   if(!files.length) return;
-  const first=(files[0].webkitRelativePath||files[0].name).split("/")[0] || "Selected Folder";
-  resetUI(first);
+  const first=(files[0].webkitRelativePath||files[0].name).split("/")[0]||"Selected Folder";
+  resetUI(first,"webkitdirectory fallback");
   const dirs=new Map();
 
   function ensure(path){
@@ -373,26 +582,25 @@ async function scanFallbackFiles(fileList){
   }
   ensure(first);
 
-  const CHUNK=5000;
+  const CHUNK=4000;
   for(let i=0;i<files.length;i++){
     if(cancelled) break;
     const f=files[i];
-    const rel=f.webkitRelativePath || `${first}/${f.name}`;
+    const rel=f.webkitRelativePath||`${first}/${f.name}`;
     const parts=rel.split("/");
     const dirPath=parts.length>1 ? parts.slice(0,-1).join("/") : first;
-
     const dparts=dirPath.split("/");
     for(let n=1;n<=dparts.length;n++) ensure(dparts.slice(0,n).join("/"));
     const rec=ensure(dirPath);
     rec.directSize+=f.size; rec.directFiles++;
-    totalFiles++; totalBytes+=f.size;
+    totalFiles++; totalBytes+=f.size; addFileType(f.name,f.size);
     currentFolderCount=dirs.size;
     if(i%CHUNK===0){
       updateUI(true);
       await new Promise(r=>setTimeout(r,0));
     }
   }
-  if(cancelled){ finishUI("اسکن متوقف شد."); return; }
+  if(cancelled){finishUI("اسکن متوقف شد.");return}
   finalizeDirs(dirs);
 }
 
@@ -402,23 +610,33 @@ selectBtn.addEventListener("click",async()=>{
       const handle=await window.showDirectoryPicker({mode:"read"});
       await scanDirectoryHandle(handle);
     }else{
-      fallbackPicker.value="";
-      fallbackPicker.click();
+      fallbackPicker.value=""; fallbackPicker.click();
     }
   }catch(e){
     if(e && e.name!=="AbortError"){
-      // If the modern picker is blocked, use the broad browser fallback.
-      fallbackPicker.value="";
-      fallbackPicker.click();
+      fallbackPicker.value=""; fallbackPicker.click();
     }
   }
 });
 fallbackPicker.addEventListener("change",()=>scanFallbackFiles(fallbackPicker.files));
 saveBtn.addEventListener("click",saveReport);
 cancelBtn.addEventListener("click",()=>{
-  cancelled=true;
-  statusEl.textContent="در حال توقف...";
-  cancelBtn.disabled=true;
+  cancelled=true; statusEl.textContent="در حال توقف..."; cancelBtn.disabled=true;
+});
+
+searchBox.addEventListener("input",renderTable);
+minSizeFilter.addEventListener("change",renderTable);
+rowLimit.addEventListener("change",renderTable);
+document.querySelectorAll("th.sortable").forEach(th=>{
+  th.addEventListener("click",()=>{
+    const key=th.dataset.key;
+    if(sortKey===key) sortDir*=-1;
+    else{
+      sortKey=key;
+      sortDir=(key==="totalSize"||key==="totalFiles"||key==="depth") ? -1 : 1;
+    }
+    renderTable();
+  });
 });
 </script>
 </body>
